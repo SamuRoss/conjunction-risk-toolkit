@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conjunction-risk-toolkit"
+version = "0.1.0"
+description = "Tools for conjunction risk assessment and collision avoidance."
+requires-python = ">=3.13"
+dependencies = [
+    "numpy",
+    "matplotlib",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
