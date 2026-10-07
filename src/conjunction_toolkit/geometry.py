@@ -32,10 +32,34 @@ def range_rate(
     relative_velocity: np.ndarray, 
 ) -> float:
 
+    """Return the range rate between two objects"""
+
     den = np.linalg.norm(relative_position)
     d_dot = np.dot(relative_position, relative_velocity)/den
 
     return float(d_dot)
+
+def encounter_frame(
+    relative_position: np.ndarray,
+    relative_velocity: np.ndarray,
+) -> np.ndarray:
+    
+    """Return the inertial-to-encounter transformation matrix."""
+
+    # z-axis
+    e_z = relative_velocity/np.linalg.norm(relative_velocity)
+
+    # x-axis
+    r_perpendicular = relative_position - (np.dot(relative_position, e_z))*e_z
+    e_x = r_perpendicular/np.linalg.norm(r_perpendicular)
+
+    # y-axis 
+    e_y = np.cross(e_z, e_x)
+
+    # Matrix
+    R_in2enc = np.vstack([e_x, e_y, e_z])
+
+    return R_in2enc
 
 
 if __name__ == "__main__": 
@@ -47,9 +71,11 @@ if __name__ == "__main__":
     delta_x = relative_state(r_primary=r_p, v_primary=v_p, r_secondary=r_s, v_secondary=v_s)
     d_miss = miss_distance(delta_x[0])
     d_dot = range_rate(relative_position=delta_x[0], relative_velocity=delta_x[1])
+    R_in2enc = encounter_frame(relative_position=delta_x[0], relative_velocity=delta_x[1])
     
     print(d_miss)
     print(d_dot)
+    print(R_in2enc)
 
 
     

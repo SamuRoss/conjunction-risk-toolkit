@@ -1,5 +1,5 @@
 import numpy as np
-from conjunction_toolkit.geometry import relative_state, miss_distance, range_rate
+from conjunction_toolkit.geometry import relative_state, miss_distance, range_rate, encounter_frame
 
 
 def test_relative_state() -> None:
@@ -48,3 +48,46 @@ def test_range_rate_negative_at_approach() -> None:
     d_dot = range_rate(relative_position, relative_velocity)
     
     np.testing.assert_almost_equal(d_dot, expected_range_rate)
+
+def test_encounter_frame_orthogonal() -> None:
+
+    relative_position = np.array([100, 10, 0])
+    relative_velocity = np.array([0, 10, 0])
+
+    expected_e_x = np.array([1, 0,  0])
+    expected_e_y = np.array([0, 0, -1])
+    expected_e_z = np.array([0, 1,  0])
+
+    R_in2enc = encounter_frame(relative_position, relative_velocity)
+
+    np.testing.assert_array_almost_equal(R_in2enc.T @ R_in2enc, np.identity(3))
+
+
+def test_encounter_frame_determinant() -> None:
+
+    relative_position = np.array([100, 10, 0])
+    relative_velocity = np.array([0, 10, 0])
+
+    expected_e_x = np.array([1, 0,  0])
+    expected_e_y = np.array([0, 0, -1])
+    expected_e_z = np.array([0, 1,  0])
+
+    R_in2enc = encounter_frame(relative_position, relative_velocity)
+
+    np.testing.assert_almost_equal(np.linalg.det(R_in2enc), 1)
+
+def test_encounter_frame_matrix() -> None:
+
+    relative_position = np.array([100, 10, 0])
+    relative_velocity = np.array([0, 10, 0])
+
+    expected_e_x = np.array([1, 0,  0])
+    expected_e_y = np.array([0, 0, -1])
+    expected_e_z = np.array([0, 1,  0])
+    expected_R_in2enc = np.vstack([expected_e_x, expected_e_y, expected_e_z])
+
+    R_in2enc = encounter_frame(relative_position, relative_velocity)
+
+    np.testing.assert_array_almost_equal(R_in2enc, expected_R_in2enc)
+    
+
