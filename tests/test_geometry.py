@@ -1,6 +1,6 @@
 import numpy as np
-from conjunction_toolkit.geometry import relative_state
-from conjunction_toolkit.geometry import miss_distance
+from conjunction_toolkit.geometry import relative_state, miss_distance, range_rate
+
 
 def test_relative_state() -> None:
 
@@ -29,4 +29,22 @@ def test_miss_distance() -> None:
     np.testing.assert_almost_equal(d_miss, expected_distance)
 
 
+def test_range_rate_zero_at_TCA() -> None: 
 
+    # TCA check: d_dot = 0
+    relative_position = np.array([100, 0, 0])
+    relative_velocity = np.array([0, 10, 0])
+    expected_range_rate = 0
+    d_dot = range_rate(relative_position, relative_velocity)
+
+    np.testing.assert_almost_equal(d_dot, expected_range_rate)
+
+def test_range_rate_negative_at_approach() -> None:
+
+    # Approaching check: d_dot < 0
+    relative_position = np.array([100, 0, 0])
+    relative_velocity = np.array([-2, 10, 0])
+    expected_range_rate = -2
+    d_dot = range_rate(relative_position, relative_velocity)
+    
+    np.testing.assert_almost_equal(d_dot, expected_range_rate)

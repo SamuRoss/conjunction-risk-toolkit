@@ -19,7 +19,6 @@ def relative_state(
     return delta_r, delta_v
     
 
-
 def miss_distance(relative_position: np.ndarray) -> float:
 
     """Return the Euclidean distance between the two objects."""
@@ -27,6 +26,16 @@ def miss_distance(relative_position: np.ndarray) -> float:
     d_miss = np.linalg.norm(relative_position)
 
     return float(d_miss)
+
+def range_rate(
+    relative_position: np.ndarray, 
+    relative_velocity: np.ndarray, 
+) -> float:
+
+    den = np.linalg.norm(relative_position)
+    d_dot = np.dot(relative_position, relative_velocity)/den
+
+    return float(d_dot)
 
 
 if __name__ == "__main__": 
@@ -37,8 +46,10 @@ if __name__ == "__main__":
     
     delta_x = relative_state(r_primary=r_p, v_primary=v_p, r_secondary=r_s, v_secondary=v_s)
     d_miss = miss_distance(delta_x[0])
-
+    d_dot = range_rate(relative_position=delta_x[0], relative_velocity=delta_x[1])
+    
     print(d_miss)
+    print(d_dot)
 
 
     
