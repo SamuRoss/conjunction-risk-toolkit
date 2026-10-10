@@ -1,5 +1,5 @@
 import numpy as np
-from conjunction_toolkit.covariance import combine_position_covariances, project_covariance_to_encounter_plane
+from conjunction_toolkit.covariance import combine_position_covariances, project_covariance_to_encounter_plane, covariance_ellipse_points
 
 def test_covariance_combination() -> None: 
 
@@ -49,6 +49,30 @@ def test_covariance_projection() -> None:
     P_enc = project_covariance_to_encounter_plane(expected_P_rel, R_in2enc)
 
     np.testing.assert_allclose(P_enc, expected_P_enc)
+
+
+def test_covariance_ellipse() -> None:
+
+    # Covariance  
+    P = np.array([
+        [5.0, -2.0],
+        [-2.0, 25.0],
+    ])
+    inv_P = np.linalg.inv(P)
+
+    # Ellipse 
+    points = covariance_ellipse_points(P, sigma_level=2)
+
+    # Mahalanobis Distances
+    mahalanobis_squared = np.einsum(
+        "ni,ij,nj->n",
+        points,
+        inv_P,
+        points,
+    )
+
+    # Check Mahalanobis distances
+    np.testing.assert_allclose(mahalanobis_squared, 4, atol=1e-12)
 
 
 

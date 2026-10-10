@@ -22,3 +22,33 @@ def project_covariance_to_encounter_plane(
     encounter_covariance = A @ relative_covariance @ A.T
 
     return encounter_covariance
+
+def covariance_ellipse_points(
+    covariance: np.ndarray,
+    sigma_level: float = 1.0,
+    number_of_points: int = 200,
+) -> np.ndarray:
+    """Return centered points on a 2D covariance ellipse."""
+
+    # Eigenvalues and Eigenvectors
+    Lambda, Q = np.linalg.eigh(covariance)
+
+    # Semi-axes length
+    semi_axes = sigma_level*np.sqrt(Lambda)
+
+    # Unit Circle
+    thetas = np.linspace(0, 2*np.pi, number_of_points+1)
+    thetas = thetas[0:number_of_points]
+    unit_circle = np.stack((np.cos(thetas), np.sin(thetas)), axis=1)
+
+    # Ellipse
+    ellipse_before_rotation = semi_axes*unit_circle
+    ellipse = (Q @ ellipse_before_rotation.T).T
+
+    return ellipse
+
+
+
+
+
+
