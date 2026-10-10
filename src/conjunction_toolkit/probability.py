@@ -47,7 +47,25 @@ def collision_probability_foster(
 ) -> tuple[float, float]:
     """Return Foster collision probability and quadrature error estimate."""
 
-    
+    if miss_vector.shape != (2,):
+        raise ValueError("Miss vector must have shape (2,)")
+
+    if not np.all(np.isfinite(miss_vector)):
+        raise ValueError("Miss vector must contain only finite values")
+
+    validate_positive_definite_covariance(
+        covariance,
+        expected_dimension=2,
+    )
+
+    if not np.isfinite(hard_body_radius) or hard_body_radius <= 0.0:
+        raise ValueError("Hard-body radius must be finite and positive")
+
+    if not np.isfinite(absolute_tolerance) or absolute_tolerance <= 0.0:
+        raise ValueError("Absolute tolerance must be finite and positive")
+
+    if not np.isfinite(relative_tolerance) or relative_tolerance <= 0.0:
+        raise ValueError("Relative tolerance must be finite and positive")
 
     def integrand(theta: float, 
                   rho: float, 
@@ -99,7 +117,7 @@ def collision_probability_foster(
               f"Proabability of Collision must be within 0 and 1. Actual PoC: {poc}"
          )
 
-    return poc, error_estimate
+    return poc, poc_error_estimate
 
          
 
