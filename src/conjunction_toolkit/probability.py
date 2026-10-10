@@ -1,5 +1,6 @@
 import numpy as np
 from conjunction_toolkit.covariance import validate_positive_definite_covariance
+from scipy.integrate import dblquad
 
 def gaussian_pdf_2d(
     point: np.ndarray,
@@ -36,4 +37,70 @@ def gaussian_pdf_2d(
     f = np.exp(log_f)
 
     return f
+
+def collision_probability_foster(
+    miss_vector: np.ndarray,
+    covariance: np.ndarray,
+    hard_body_radius: float,
+    absolute_tolerance: float = 1e-12,
+    relative_tolerance: float = 1e-9,
+) -> tuple[float, float]:
+    """Return Foster collision probability and quadrature error estimate."""
+
+    
+
+    def integrand(theta: float, 
+                  rho: float, 
+                  sigma_1_square: float,
+                  sigma_2_square: float, 
+                  miss_vec: np.ndarray, 
+                  eigvecs: np.ndarray) -> float:
+
+         # Cartesian Coordinates
+         x = rho*np.cos(theta)
+         y = rho*np.sin(theta)
+
+         # Rotate Miss vector in Principal Axed
+         miss_vec_rot = eigvecs.T @ miss_vec
+
+         # Miss Vector Components
+         mu_1 = miss_vec_rot[0]
+         mu_2 = miss_vec_rot[1]
+
+         # Exponent 
+         exponent = -0.5*((x - mu_1)**2/sigma_1_square + (y - mu_2)**2/sigma_2_square)
+
+         return np.exp(exponent)*rho
+
+    # Eigenvalues and Eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eigh(0.5*(covariance + covariance.T))
+    sigma_1_square = eigenvalues[0]
+    sigma_2_square = eigenvalues[1]
+    sigma_1 = np.sqrt(sigma_1_square)
+    sigma_2 = np.sqrt(sigma_2_square)
+
+    # Gaussian normalization
+    gauss_norm = 1/(2*np.pi*sigma_1*sigma_2)
+
+    integral, error_estimate = dblquad(integrand, 
+                                       0, 
+                                       hard_body_radius, 
+                                       lambda rho: 0, 
+                                       lambda rho: 2*np.pi, 
+                                       args=(sigma_1_square, sigma_2_square, miss_vector, eigenvectors), 
+                                       epsabs=absolute_tolerance, 
+                                       epsrel=relative_tolerance)
+
+    poc = gauss_norm*integral
+    poc_error_estimate = gauss_norm*error_estimate
+
+    if poc < 0 or poc > 1: 
+         raise ValueError(
+              f"Proabability of Collision must be within 0 and 1. Actual PoC: {poc}"
+         )
+
+    return poc, error_estimate
+
+         
+
 

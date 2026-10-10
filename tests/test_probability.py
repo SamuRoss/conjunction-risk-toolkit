@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from conjunction_toolkit.probability import gaussian_pdf_2d
+from conjunction_toolkit.probability import *
 
 def test_gaussian_pdf_2d_centred() -> None:
 
@@ -58,3 +58,17 @@ def test_gaussian_pdf_2d_rejects_singular_covariance() -> None:
             mean,
             covariance,
         )
+
+def test_poc_foster() -> None:
+
+    miss_vector = np.zeros(2)
+    covariance = np.diag([50.0**2, 50.0**2])
+    hard_body_radius = 10.0
+
+    expected_probability = 1.0 - np.exp(-(hard_body_radius**2) / (2.0 * 50.0**2)
+)
+    poc, err_estimate = collision_probability_foster(miss_vector, covariance, hard_body_radius)
+
+    np.testing.assert_allclose(poc, expected_probability)
+    assert err_estimate < 1e-10
+
