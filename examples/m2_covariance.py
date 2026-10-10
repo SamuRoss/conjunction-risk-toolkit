@@ -91,14 +91,18 @@ ax.set_title("Encounter-plane uncertainty at TCA")
 ax.legend()
 ax.grid(True)
 ax.set_aspect("equal", adjustable='box')
-             
-plt.show()
 
+'''
 plt.savefig(
     "docs/images/encounter-plane-uncertainty.png",
     dpi=200,
     bbox_inches="tight",
 )
+'''
+             
+plt.show()
+
+
 
 
 

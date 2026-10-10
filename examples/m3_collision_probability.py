@@ -123,8 +123,13 @@ ax.axvline(1, linestyle='--', color='red', linewidth=1.0)
 ax.plot(1, poc_f, 'rx', markersize=8, linewidth=2.0, label=r'PoC @ $s=1$')
 ax.legend()
 ax.grid(True, which='both')
-plt.show()
 
+
+plt.savefig(
+    "docs/images/probability-dilution.png",
+    dpi=200,
+    bbox_inches="tight",
+)
 '''
 plt.savefig(
     "docs/images/probability-dilution.png",
@@ -132,6 +137,9 @@ plt.savefig(
     bbox_inches="tight",
 )
 '''
+plt.show()
+
+
 
 
 
