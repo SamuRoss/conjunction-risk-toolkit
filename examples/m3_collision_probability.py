@@ -125,6 +125,14 @@ ax.legend()
 ax.grid(True, which='both')
 plt.show()
 
+'''
+plt.savefig(
+    "docs/images/probability-dilution.png",
+    dpi=200,
+    bbox_inches="tight",
+)
+'''
+
 
 
 

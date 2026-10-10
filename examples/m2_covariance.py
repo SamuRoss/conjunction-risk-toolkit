@@ -94,6 +94,12 @@ ax.set_aspect("equal", adjustable='box')
              
 plt.show()
 
+plt.savefig(
+    "docs/images/encounter-plane-uncertainty.png",
+    dpi=200,
+    bbox_inches="tight",
+)
+
 
 
 
