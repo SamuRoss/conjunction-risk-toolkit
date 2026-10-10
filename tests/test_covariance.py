@@ -1,5 +1,6 @@
 import numpy as np
-from conjunction_toolkit.covariance import combine_position_covariances, project_covariance_to_encounter_plane, covariance_ellipse_points, transform_covariance
+import pytest
+from conjunction_toolkit.covariance import *
 
 def test_covariance_combination() -> None: 
 
@@ -91,5 +92,27 @@ def test_covariance_transformation() -> None:
 
     np.testing.assert_allclose(P_in, expected_P_in)
 
+def test_validate_covariance_accepts_semidefinite_matrix() -> None:
+    covariance = np.diag([1.0, 0.0])
 
+    validate_covariance(covariance, expected_dimension=2)
+
+
+@pytest.mark.parametrize(
+    "covariance",
+    [
+        np.ones((2, 3)),
+        np.array([[1.0, 2.0], [0.0, 1.0]]),
+        np.diag([1.0, -1.0]),
+        np.array([[1.0, np.nan], [np.nan, 1.0]]),
+    ],
+)
+def test_validate_covariance_rejects_invalid_matrix(
+    covariance: np.ndarray,
+) -> None:
+    with pytest.raises(ValueError):
+        validate_covariance(
+            covariance,
+            expected_dimension=2,
+        )
 
