@@ -113,3 +113,25 @@ def validate_covariance(
         raise ValueError(
             "Covariance must be positive semidefinite. Minimum eigenvalue: {minimum_eigenvalue:.6e}."
         )
+
+
+def validate_positive_definite_covariance(
+    covariance: np.ndarray,
+    expected_dimension: int,
+) -> None:
+    """Raise ValueError unless a covariance is numerically positive definite."""
+
+    validate_covariance(covariance, expected_dimension)
+
+    # Symmetrize Matrix
+    P_sym = 0.5*(covariance + covariance.T)
+
+    # Eigenvalues 
+    eigenvalues = np.linalg.eigvalsh(P_sym)
+
+    # Raise ValueError if minimum eigenvalue does not satisfy tolerance
+    scale = max(1.0, float(np.max(np.abs(eigenvalues))))
+    tolerance = 1e-12*scale
+    minimum_eigenvalue = float(np.min(eigenvalues))
+    if minimum_eigenvalue <= tolerance:
+        raise ValueError("Covariance must be positive definite")

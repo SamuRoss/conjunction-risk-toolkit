@@ -116,3 +116,10 @@ def test_validate_covariance_rejects_invalid_matrix(
             expected_dimension=2,
         )
 
+
+def test_validate_covariance_rejects_semidefinite_matrix() -> None:
+    
+    covariance = np.diag([1.0, 0.0])
+    with pytest.raises(ValueError):
+           validate_positive_definite_covariance(covariance, 2)
+
