@@ -47,8 +47,11 @@ def covariance_ellipse_points(
 
     return ellipse
 
+def transform_covariance(
+    covariance_source: np.ndarray,
+    rotation_source_to_target: np.ndarray,
+) -> np.ndarray:
+    """Transform a covariance between orthonormal coordinate frames."""
 
-
-
-
+    return rotation_source_to_target @ covariance_source @ rotation_source_to_target.T
 

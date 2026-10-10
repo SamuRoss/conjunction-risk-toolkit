@@ -1,11 +1,11 @@
 import numpy as np
-from conjunction_toolkit.geometry import relative_state, miss_distance, range_rate, encounter_frame
-from conjunction_toolkit.covariance import combine_position_covariances, project_covariance_to_encounter_plane, covariance_ellipse_points
+from conjunction_toolkit.geometry import relative_state, miss_distance, range_rate, encounter_frame, rtn_frame
+from conjunction_toolkit.covariance import combine_position_covariances, project_covariance_to_encounter_plane, covariance_ellipse_points, transform_covariance
 import matplotlib.pyplot as plt
 
 ####################### INSERT DATA #######################
 
-# Primary Position and Velocity and Covariance
+# Primary Position and Velocity and Covariance (P in RTN)
 r_p = np.array([7_000_000.0, 0.0, 0.0])
 v_p = np.array([0.0, 7_500.0, 0.0])
 P_p = np.array([
@@ -14,7 +14,7 @@ P_p = np.array([
     [800.0, 0.0, 1600.0],
 ])
 
-# Secondary Position and Velocity and Covariance
+# Secondary Position and Velocity and Covariance (P in RTN)
 r_s = np.array([7_000_200.0, 0.0, 0.0])
 v_s = np.array([0.0, 3_750.0, 6_495.190528])
 P_s = np.array([
@@ -25,7 +25,6 @@ P_s = np.array([
 
 # Hard-Body Radius
 HBR = 10
-
 
 ###################### RESULTS ######################
 
@@ -50,8 +49,14 @@ print(f"Relative Velocity: {np.linalg.norm(delta_v):.1f} m/s")
 print(f"Encounter Position: {delta_r_enc} m")
 print(f"Encounter Velocity: {delta_v_enc} m/s")
 
+# RTN frames
+R_in2rtn_p = rtn_frame(r_p, v_p)
+R_in2rtn_s = rtn_frame(r_s, v_s)
+
 # Covariance Projection
-P_rel = combine_position_covariances(P_p, P_s)
+P_p_in = transform_covariance(P_p, R_in2rtn_p.T)
+P_s_in = transform_covariance(P_s, R_in2rtn_s.T)
+P_rel = combine_position_covariances(P_p_in, P_s_in)
 P_enc = project_covariance_to_encounter_plane(P_rel, R_in2enc)
 print(f"Covariance in Encounter plane: {P_enc} m^2")
 ellipse_1sigma = covariance_ellipse_points(P_enc, sigma_level=1, number_of_points=1000)
@@ -82,7 +87,7 @@ ax.fill(hbr_x, hbr_y, color="black", alpha=0.35, label="HBR", edgecolor='black')
 # ax.set_ylim([-d_miss*1.5, d_miss*1.5])
 ax.set_xlabel("Encounter x [m]")
 ax.set_ylabel("Encounter y [m]")
-ax.set_title("Conjunction geometry at TCA")
+ax.set_title("Encounter-plane uncertainty at TCA")
 ax.legend()
 ax.grid(True)
 ax.set_aspect("equal", adjustable='box')

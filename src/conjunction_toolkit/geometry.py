@@ -62,6 +62,26 @@ def encounter_frame(
     return R_in2enc
 
 
+def rtn_frame(
+    position: np.ndarray,
+    velocity: np.ndarray,
+) -> np.ndarray:
+    """Return the inertial-to-RTN transformation matrix."""
+
+    r = position
+    v = velocity
+
+    e_r = r/np.linalg.norm(r)
+    e_n = np.cross(r, v)/np.linalg.norm(np.cross(r, v))
+    e_t = np.cross(e_n, e_r)
+
+    R_in2RTN = np.vstack((e_r, e_t, e_n))
+
+    return R_in2RTN
+
+
+
+
 if __name__ == "__main__": 
     r_p = np.array([7000, 0, 0])
     v_p = np.array([0, 7.5, 0])

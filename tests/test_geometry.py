@@ -1,5 +1,5 @@
 import numpy as np
-from conjunction_toolkit.geometry import relative_state, miss_distance, range_rate, encounter_frame
+from conjunction_toolkit.geometry import relative_state, miss_distance, range_rate, encounter_frame, rtn_frame
 
 
 def test_relative_state() -> None:
@@ -90,4 +90,17 @@ def test_encounter_frame_matrix() -> None:
 
     np.testing.assert_array_almost_equal(R_in2enc, expected_R_in2enc)
     
+def test_rtn_frame() -> None:
 
+    r = np.array([0.0, 7_000_000.0, 0.0])
+    v = np.array([-7_500.0, 0.0, 0.0])
+
+    expected_R = np.array([
+        [ 0.0, 1.0, 0.0],  # R
+        [-1.0, 0.0, 0.0],  # T
+        [ 0.0, 0.0, 1.0],  # N
+    ])
+
+    R = rtn_frame(r, v)
+
+    np.testing.assert_allclose(R, expected_R)

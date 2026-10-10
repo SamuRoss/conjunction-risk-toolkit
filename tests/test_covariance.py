@@ -1,5 +1,5 @@
 import numpy as np
-from conjunction_toolkit.covariance import combine_position_covariances, project_covariance_to_encounter_plane, covariance_ellipse_points
+from conjunction_toolkit.covariance import combine_position_covariances, project_covariance_to_encounter_plane, covariance_ellipse_points, transform_covariance
 
 def test_covariance_combination() -> None: 
 
@@ -74,6 +74,22 @@ def test_covariance_ellipse() -> None:
     # Check Mahalanobis distances
     np.testing.assert_allclose(mahalanobis_squared, 4, atol=1e-12)
 
+
+def test_covariance_transformation() -> None: 
+
+    R_in2RTN = np.array([
+        [ 0.0, 1.0, 0.0],  # R
+        [-1.0, 0.0, 0.0],  # T
+        [ 0.0, 0.0, 1.0],  # N
+    ])
+    P_rtn = np.diag([100.0, 400.0, 900.0])
+    R_RTN2in = R_in2RTN.T
+
+    expected_P_in = np.diag([400.0, 100.0, 900.0])
+
+    P_in = transform_covariance(P_rtn, R_RTN2in)
+
+    np.testing.assert_allclose(P_in, expected_P_in)
 
 
 
