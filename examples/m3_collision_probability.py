@@ -116,20 +116,21 @@ ax.set_aspect("equal", adjustable='box')
 
 """ Plot Probability Dilution """ 
 fig, ax = plt.subplots(figsize = (10, 6))
-ax.loglog(uncertainty_scales, poc_changing_P_enc)
-ax.set_xlabel(r"Uncertainty scale $s$ ($P_s=s^2P$) [-]")
+ax.semilogy(np.sqrt(uncertainty_scales), poc_changing_P_enc)
+ax.set_xlabel(r"$P_s/P$ [-]")
 ax.set_ylabel("Probability of Collision [-]")
 ax.axvline(1, linestyle='--', color='red', linewidth=1.0)
 ax.plot(1, poc_f, 'rx', markersize=8, linewidth=2.0, label=r'PoC @ $s=1$')
 ax.legend()
 ax.grid(True, which='both')
 
-
+'''
 plt.savefig(
     "docs/images/probability-dilution.png",
     dpi=200,
     bbox_inches="tight",
 )
+'''
 '''
 plt.savefig(
     "docs/images/probability-dilution.png",
