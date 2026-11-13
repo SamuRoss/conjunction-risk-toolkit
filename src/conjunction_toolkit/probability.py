@@ -1,5 +1,5 @@
 import numpy as np
-from conjunction_toolkit.covariance import validate_positive_definite_covariance
+from conjunction_toolkit.covariance import validate_positive_definite_covariance, Covariance, squared_mahalanobis
 from scipy.integrate import dblquad
 
 def gaussian_pdf_2d(
@@ -40,7 +40,7 @@ def gaussian_pdf_2d(
 
 def poc_foster(
     miss_vector: np.ndarray,
-    covariance: np.ndarray,
+    covariance: Covariance,
     hard_body_radius: float,
     absolute_tolerance: float = 1e-12,
     relative_tolerance: float = 1e-9,
@@ -91,7 +91,7 @@ def poc_foster(
          return np.exp(exponent)*rho
 
     # Eigenvalues and Eigenvectors
-    eigenvalues, eigenvectors = np.linalg.eigh(0.5*(covariance + covariance.T))
+    eigenvalues, eigenvectors = covariance.get_diagonalized()
     sigma_1_square = eigenvalues[0]
     sigma_2_square = eigenvalues[1]
     sigma_1 = np.sqrt(sigma_1_square)
@@ -121,7 +121,7 @@ def poc_foster(
 
 def poc_monte_carlo(
     miss_vector: np.ndarray,
-    covariance: np.ndarray,
+    covariance: Covariance,
     hard_body_radius: float,
     number_of_samples: int = 10_000,
     seed: int | None = None,
@@ -148,7 +148,7 @@ def poc_monte_carlo(
     rng = np.random.default_rng(seed)
 
     # Generate Samples
-    samples = rng.multivariate_normal(mean=miss_vector, cov=covariance, size=number_of_samples)
+    samples = rng.multivariate_normal(mean=miss_vector, cov=covariance.value, size=number_of_samples)
 
     # Compute Distances
     distances = np.linalg.norm(samples, axis=1)
@@ -165,8 +165,17 @@ def poc_monte_carlo(
     return poc, standard_error
 
 
-    
+def poc_foster_small_hbr(miss_vector: np.ndarray,
+                         covariance: Covariance,
+                         hard_body_radius: float):
+   
+    H = hard_body_radius
+    detP = np.linalg.det(covariance.value)
+    d_M_squared = squared_mahalanobis(miss_vector, covariance)
 
+    poc = (H**2)/(2*np.sqrt(detP))*np.exp(-0.5*d_M_squared)
+
+    return poc
 
 
 
