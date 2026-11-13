@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Self
 
 class Covariance: 
 
@@ -7,20 +8,31 @@ class Covariance:
         self.value = value
         
 
-    def get_diagonalized(self):
+    def get_diagonalized(self) -> np.ndarray:
 
         eigvals, Q = np.linalg.eigh(self.value)
 
         return eigvals, Q
 
-    def get_eig(self):
+    def get_eig(self) -> np.ndarray:
         
         eigvals = np.linalg.eigvalsh(self.value)
         
         return eigvals
 
-    def force_symmetry(self): 
+    def force_symmetry(self) -> Self: 
         return Covariance(0.5*(self.value + self.value.T))
+
+    def rotate(self, 
+               angle: float) -> Self:
+
+        rot_matrix = np.vstack(([np.cos(angle), -np.sin(angle)], 
+                               [np.sin(angle), np.cos(angle)]))
+
+        return Covariance(rot_matrix @ self.value @ rot_matrix.T)
+
+        
+         
 
 def combine_position_covariances(
     covariance_primary: Covariance,

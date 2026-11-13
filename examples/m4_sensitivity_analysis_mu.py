@@ -67,8 +67,8 @@ plt.semilogy(mu_vec, poc_foster_along_minor, label='Foster - Minor', color='red'
 plt.semilogy(mu_vec, poc_small_hbr_major, label='Small H', color='black', linestyle='--', linewidth=1.5)
 plt.semilogy(mu_vec, poc_small_hbr_minor, color='black', linestyle='--', linewidth=1.5)
 plt.grid(visible=True, which='both')
-plt.xlabel(f'Miss Distance $\mu$ [m]')
-plt.ylabel(f'PoC [-]')
+plt.xlabel(r'Miss Distance $\mu$ [m]')
+plt.ylabel(r'PoC [-]')
 plt.legend()
 plt.show()
     
