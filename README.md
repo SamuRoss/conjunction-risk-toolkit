@@ -17,7 +17,7 @@ The toolkit currently supports:
 - circular hard-body regions;
 - Foster collision-probability integration;
 - Monte Carlo probability estimation;
-- probability-dilution analysis.
+- collision-risk sensitivity and probability-dilution analysis.
 
 ## Example conjunction
 
@@ -46,6 +46,25 @@ As the covariance initially grows, more probability density overlaps the hard-bo
 
 This decrease does not imply that the encounter has become safer—it is a consequence of greater uncertainty.
 
+## Risk sensitivity
+
+Controlled numerical experiments explore how collision probability changes with:
+
+- miss-distance magnitude and direction;
+- covariance orientation;
+- Hard-Body Radius;
+- covariance magnitude.
+
+The exact Foster calculation is compared with the small-HBR analytical approximation to identify where the approximation is valid and where it breaks down.
+
+![Risk-sensitivity summary](docs/images/risk-sensitivity-summary.png)
+
+The coupled map below shows collision probability as a function of miss distance and covariance scale. The dilution ridge identifies the covariance scale that maximises collision probability for each miss distance.
+
+![Collision-risk sensitivity map](docs/images/risk-sensitivity-map.png)
+
+Iso-probability contours demonstrate that the same collision probability can occur on either side of the ridge: once with relatively small uncertainty and once after probability dilution. These cases have very different operational interpretations despite sharing the same numerical \(P_c\).
+
 ## Quick start
 
 Create and activate the Conda environment:
@@ -61,7 +80,7 @@ Install the package in editable mode:
 python -m pip install -e .
 ```
 
-Run the tests:
+Run the complete test suite:
 
 ```bash
 pytest
@@ -77,7 +96,7 @@ python examples/m3_collision_probability.py
 
 ```text
 conjunction-risk-toolkit/
-├── examples/                 # Executable conjunction scenarios
+├── examples/                 # Executable conjunction studies
 ├── src/conjunction_toolkit/  # Geometry, covariance and probability tools
 ├── tests/                    # Automated verification
 ├── docs/images/              # README figures
@@ -87,14 +106,22 @@ conjunction-risk-toolkit/
 
 ## Scope
 
-The current model assumes a Gaussian relative-position distribution, independent object estimates, a short linear encounter and a circular combined hard-body region.
+The current model assumes:
 
-It is intended as an educational and portfolio implementation of conjunction-analysis fundamentals, not as an operational collision-avoidance system.
+- a Gaussian relative-position distribution;
+- independent object estimates;
+- states and covariances defined at a common TCA;
+- a short, linear encounter;
+- a circular combined hard-body region.
+
+The toolkit is an educational and portfolio implementation of conjunction-analysis fundamentals, not an operational collision-avoidance system.
 
 ## Progress
 
 - [x] Relative conjunction geometry
 - [x] Covariance transformation and encounter-plane projection
 - [x] Foster and Monte Carlo collision probability
-- [x] Probability-dilution analysis
-- [ ] Extended conjunction assessment and avoidance methods
+- [x] Probability-dilution and risk-sensitivity analysis
+- [ ] CCSDS Conjunction Data Message support
+- [ ] Manoeuvre sensitivity and CAM design
+- [ ] Nonlinear post-manoeuvre verification

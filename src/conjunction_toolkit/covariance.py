@@ -1,35 +1,67 @@
 import numpy as np
+from typing import Self
+
+class Covariance: 
+
+    def __init__(self, 
+                 value: np.ndarray):
+        self.value = value
+        
+
+    def get_diagonalized(self) -> np.ndarray:
+
+        eigvals, Q = np.linalg.eigh(self.value)
+
+        return eigvals, Q
+
+    def get_eig(self) -> np.ndarray:
+        
+        eigvals = np.linalg.eigvalsh(self.value)
+        
+        return eigvals
+
+    def force_symmetry(self) -> Self: 
+        return Covariance(0.5*(self.value + self.value.T))
+
+    def rotate(self, 
+               angle: float) -> Self:
+
+        rot_matrix = np.vstack(([np.cos(angle), -np.sin(angle)], 
+                               [np.sin(angle), np.cos(angle)]))
+
+        return Covariance(rot_matrix @ self.value @ rot_matrix.T)
+
+        
+         
 
 def combine_position_covariances(
-    covariance_primary: np.ndarray,
-    covariance_secondary: np.ndarray,
-) -> np.ndarray:
+    covariance_primary: Covariance,
+    covariance_secondary: Covariance,
+) -> Covariance:
     """Combine independent position covariances in a common frame."""
 
     validate_covariance(covariance_primary, 3)
     validate_covariance(covariance_secondary, 3)
 
-    covariance_relative = covariance_primary + covariance_secondary
+    covariance_relative = covariance_primary.value + covariance_secondary.value
 
-    return covariance_relative
-
-
+    return Covariance(covariance_relative)
 
 def project_covariance_to_encounter_plane(
-    relative_covariance: np.ndarray,
+    relative_covariance: Covariance,
     rotation_inertial_to_encounter: np.ndarray,
-) -> np.ndarray:
+) -> Covariance:
     """Project a 3D relative covariance into the 2D encounter plane."""
 
     validate_covariance(relative_covariance, 3)
 
     A = rotation_inertial_to_encounter[0:2, :]
-    encounter_covariance = A @ relative_covariance @ A.T
+    encounter_covariance = A @ relative_covariance.value @ A.T
 
-    return encounter_covariance
+    return Covariance(encounter_covariance)
 
 def covariance_ellipse_points(
-    covariance: np.ndarray,
+    covariance: Covariance,
     sigma_level: float = 1.0,
     number_of_points: int = 200,
 ) -> np.ndarray:
@@ -38,7 +70,8 @@ def covariance_ellipse_points(
     validate_covariance(covariance, 2)
 
     # Eigenvalues and Eigenvectors
-    Lambda, Q = np.linalg.eigh(0.5*(covariance + covariance.T))
+    covsym = covariance.force_symmetry()
+    Lambda, Q = covsym.get_diagonalized()
     Lambda = np.clip(Lambda, 0, None)
 
     # Semi-axes length
@@ -56,36 +89,37 @@ def covariance_ellipse_points(
     return ellipse
 
 def transform_covariance(
-    covariance_source: np.ndarray,
+    covariance_source: Covariance,
     rotation_source_to_target: np.ndarray,
-) -> np.ndarray:
+) -> Covariance:
     """Transform a covariance between orthonormal coordinate frames."""
 
     validate_covariance(covariance_source, 3)
+    rotated_covariance = rotation_source_to_target @ covariance_source.value @ rotation_source_to_target.T
 
-    return rotation_source_to_target @ covariance_source @ rotation_source_to_target.T
+    return Covariance(rotated_covariance)
 
 def validate_covariance(
-    covariance: np.ndarray,
+    covariance: Covariance,
     expected_dimension: int,
 ) -> None:
     """Raise ValueError if a covariance matrix is invalid."""
 
     expected_shape = (expected_dimension, expected_dimension)
 
-    if covariance.shape != expected_shape:
+    if covariance.value.shape != expected_shape:
         raise ValueError(
-            f"Covariance must have shape {expected_shape} but received {covariance.shape}."
+            f"Covariance must have shape {expected_shape} but received {covariance.value.shape}."
         )
 
-    if not np.all(np.isfinite(covariance)):
+    if not np.all(np.isfinite(covariance.value)):
         raise ValueError(
             "Covariance must contain only finite values."
         )
 
     if not np.allclose(
-        covariance,
-        covariance.T,
+        covariance.value,
+        covariance.value.T,
         rtol=1e-10,
         atol=1e-12,
     ):
@@ -94,13 +128,9 @@ def validate_covariance(
         )
 
     # Remove negligible numerical asymmetry before eigendecomposition.
-    symmetric_covariance = 0.5 * (
-        covariance + covariance.T
-    )
+    symmetric_covariance = covariance.force_symmetry()
 
-    eigenvalues = np.linalg.eigvalsh(
-        symmetric_covariance
-    )
+    eigenvalues = symmetric_covariance.get_eig()
 
     scale = max(
         1.0,
@@ -116,7 +146,7 @@ def validate_covariance(
 
 
 def validate_positive_definite_covariance(
-    covariance: np.ndarray,
+    covariance: Covariance,
     expected_dimension: int,
 ) -> None:
     """Raise ValueError unless a covariance is numerically positive definite."""
@@ -124,10 +154,10 @@ def validate_positive_definite_covariance(
     validate_covariance(covariance, expected_dimension)
 
     # Symmetrize Matrix
-    P_sym = 0.5*(covariance + covariance.T)
+    P_sym = covariance.force_symmetry()
 
     # Eigenvalues 
-    eigenvalues = np.linalg.eigvalsh(P_sym)
+    eigenvalues = P_sym.get_eig()
 
     # Raise ValueError if minimum eigenvalue does not satisfy tolerance
     scale = max(1.0, float(np.max(np.abs(eigenvalues))))
@@ -135,3 +165,10 @@ def validate_positive_definite_covariance(
     minimum_eigenvalue = float(np.min(eigenvalues))
     if minimum_eigenvalue <= tolerance:
         raise ValueError("Covariance must be positive definite")
+
+def squared_mahalanobis(miss_vector: np.ndarray, 
+                        covariance: Covariance):
+
+    P_inv_mu = np.linalg.solve(covariance.value, miss_vector)
+
+    return float(miss_vector.T @ P_inv_mu)

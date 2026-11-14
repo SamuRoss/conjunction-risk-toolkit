@@ -22,9 +22,9 @@ def test_covariance_combination() -> None:
     ])
 
     # Combine
-    P_rel = combine_position_covariances(P_p, P_s)
+    P_rel = combine_position_covariances(Covariance(P_p), Covariance(P_s))
 
-    np.testing.assert_allclose(P_rel, expected_P_rel)
+    np.testing.assert_allclose(P_rel.value, expected_P_rel)
 
 def test_covariance_projection() -> None: 
 
@@ -47,9 +47,9 @@ def test_covariance_projection() -> None:
     ])
 
     # Project on Encounter Plane
-    P_enc = project_covariance_to_encounter_plane(expected_P_rel, R_in2enc)
+    P_enc = project_covariance_to_encounter_plane(Covariance(expected_P_rel), R_in2enc)
 
-    np.testing.assert_allclose(P_enc, expected_P_enc)
+    np.testing.assert_allclose(P_enc.value, expected_P_enc)
 
 
 def test_covariance_ellipse() -> None:
@@ -62,7 +62,7 @@ def test_covariance_ellipse() -> None:
     inv_P = np.linalg.inv(P)
 
     # Ellipse 
-    points = covariance_ellipse_points(P, sigma_level=2)
+    points = covariance_ellipse_points(Covariance(P), sigma_level=2)
 
     # Mahalanobis Distances
     mahalanobis_squared = np.einsum(
@@ -88,18 +88,18 @@ def test_covariance_transformation() -> None:
 
     expected_P_in = np.diag([400.0, 100.0, 900.0])
 
-    P_in = transform_covariance(P_rtn, R_RTN2in)
+    P_in = transform_covariance(Covariance(P_rtn), R_RTN2in)
 
-    np.testing.assert_allclose(P_in, expected_P_in)
+    np.testing.assert_allclose(P_in.value, expected_P_in)
 
 def test_validate_covariance_accepts_semidefinite_matrix() -> None:
     covariance = np.diag([1.0, 0.0])
 
-    validate_covariance(covariance, expected_dimension=2)
+    validate_covariance(Covariance(covariance), expected_dimension=2)
 
 
 @pytest.mark.parametrize(
-    "covariance",
+    "covariance_value",
     [
         np.ones((2, 3)),
         np.array([[1.0, 2.0], [0.0, 1.0]]),
@@ -108,11 +108,11 @@ def test_validate_covariance_accepts_semidefinite_matrix() -> None:
     ],
 )
 def test_validate_covariance_rejects_invalid_matrix(
-    covariance: np.ndarray,
+    covariance_value: np.ndarray,
 ) -> None:
     with pytest.raises(ValueError):
         validate_covariance(
-            covariance,
+            Covariance(covariance_value),
             expected_dimension=2,
         )
 
@@ -121,5 +121,4 @@ def test_validate_covariance_rejects_semidefinite_matrix() -> None:
     
     covariance = np.diag([1.0, 0.0])
     with pytest.raises(ValueError):
-           validate_positive_definite_covariance(covariance, 2)
-
+           validate_positive_definite_covariance(Covariance(covariance), 2)
