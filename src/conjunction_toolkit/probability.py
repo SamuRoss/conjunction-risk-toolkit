@@ -5,7 +5,7 @@ from scipy.integrate import dblquad
 def gaussian_pdf_2d(
     point: np.ndarray,
     mean: np.ndarray,
-    covariance: np.ndarray,
+    covariance: Covariance,
 ) -> float:
     """Evaluate a two-dimensional Gaussian probability density."""
 
@@ -25,10 +25,10 @@ def gaussian_pdf_2d(
     x_minus_mu = point - mean
 
     # Natural Logarithm of the determinant
-    sign, log_determinant = np.linalg.slogdet(covariance)
+    sign, log_determinant = np.linalg.slogdet(covariance.value)
 
     # invert covariance (P^{-1}*(x - mu))
-    inv_P_x_minus_mu = np.linalg.solve(covariance, x_minus_mu)
+    inv_P_x_minus_mu = np.linalg.solve(covariance.value, x_minus_mu)
 
     exponent = -0.5*x_minus_mu.T @ inv_P_x_minus_mu
 

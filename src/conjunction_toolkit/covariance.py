@@ -37,7 +37,7 @@ class Covariance:
 def combine_position_covariances(
     covariance_primary: Covariance,
     covariance_secondary: Covariance,
-) -> np.ndarray:
+) -> Covariance:
     """Combine independent position covariances in a common frame."""
 
     validate_covariance(covariance_primary, 3)
@@ -45,7 +45,7 @@ def combine_position_covariances(
 
     covariance_relative = covariance_primary.value + covariance_secondary.value
 
-    return covariance_relative
+    return Covariance(covariance_relative)
 
 def project_covariance_to_encounter_plane(
     relative_covariance: Covariance,
@@ -58,7 +58,7 @@ def project_covariance_to_encounter_plane(
     A = rotation_inertial_to_encounter[0:2, :]
     encounter_covariance = A @ relative_covariance.value @ A.T
 
-    return encounter_covariance
+    return Covariance(encounter_covariance)
 
 def covariance_ellipse_points(
     covariance: Covariance,
