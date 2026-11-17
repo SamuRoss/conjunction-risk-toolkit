@@ -50,7 +50,12 @@ def get_esa_file(data_path) -> pd.DataFrame:
         "c_sigma_n", 
         "c_ct_r", 
         "c_cn_r", 
-        "c_cn_t"
+        "c_cn_t", 
+        "max_risk_estimate",
+        "max_risk_scaling",
+        "mahalanobis_distance",     
+        "t_position_covariance_det",
+        "c_position_covariance_det"
     ]
 
     data = pd.read_csv(data_path, usecols=columns)
@@ -58,7 +63,8 @@ def get_esa_file(data_path) -> pd.DataFrame:
     return data
 
 def get_esa_candidates(data: pd.DataFrame, 
-                       number_of_candidates: int) -> pd.DataFrame:
+                       number_of_candidates: int, 
+                       show: bool = True) -> pd.DataFrame:
 
     candidates = data[
         (data["time_to_tca"] >= 2.0)
@@ -67,9 +73,10 @@ def get_esa_candidates(data: pd.DataFrame,
 
     candidates = candidates.sort_values("risk", ascending=False)
 
-    print(f"Dataset rows: {len(data)}")
-    print(f"Candidate rows: {len(candidates)}")
-    print(candidates.loc[:, ["event_id", "risk", "miss_distance", "t_span", "c_span"]].head(number_of_candidates).to_string(index=False))
+    if show:
+        print(f"Dataset rows: {len(data)}")
+        print(f"Candidate rows: {len(candidates)}")
+        print(candidates.loc[:, ["event_id", "risk", "miss_distance", "t_span", "c_span"]].head(number_of_candidates).to_string(index=False))
 
     return candidates
 

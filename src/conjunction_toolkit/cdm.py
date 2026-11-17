@@ -66,6 +66,8 @@ class ConjunctionEvent:
     relative_speed_reported: float | None
     poc_reported: float | None
     poc_method_reported: str | None
+    hbr: float | None = None
+    poc: float | None = None
 
     def __post_init__(self) -> None:
         
@@ -88,21 +90,28 @@ class ConjunctionEvent:
         if method != "FOSTER-1992":
             raise ValueError(f"Unsupported PoC method: {method}")
 
-        if hbr is None: 
-            
-            if self.object1.area_pc is None or self.object2.area_pc is None:
-                  raise ValueError("HBR is required when AREA_PC is unavailable")
-            
-            hbr = estimate_hbr_from_area(area_primary=self.object1.area_pc, 
-                                            area_secondary=self.object2.area_pc)
+        if hbr is None:
+            if self.hbr is None: 
+                
+                if self.object1.area_pc is None or self.object2.area_pc is None:
+                    raise ValueError("HBR is required when AREA_PC is unavailable")
+                
+                hbr = estimate_hbr_from_area(area_primary=self.object1.area_pc, 
+                                                area_secondary=self.object2.area_pc)
+
+                self.hbr = hbr
+            else:
+                hbr = self.hbr
+        else:
+            self.hbr = hbr
             
         match method: 
             case "FOSTER-1992":
-                poc, _ = poc_foster(miss_vector=self.miss_vector, 
+                self.poc, _ = poc_foster(miss_vector=self.miss_vector, 
                                     covariance=self.covariance_enc, 
                                     hard_body_radius=hbr)
 
-        return poc
+        return self.poc
 
     def _get_covariance(self):
 
@@ -160,7 +169,110 @@ class ConjunctionEvent:
 
         plt.show()
 
+    def print_summary(self, detailed: bool = False) -> None:
 
+        def format_value(
+            value: float | None,
+            unit: str = "",
+            scientific: bool = False,
+        ) -> str:
+
+            if value is None:
+                return "not available"
+
+            if scientific:
+                text = f"{value:.6e}"
+            else:
+                text = f"{value:.3f}"
+
+            return f"{text} {unit}".strip()
+
+        print("="*60)
+        print("CONJUNCTION EVENT")
+        print("="*60)
+        print(f"TCA: {self.tca.isoformat()}")
+        print(f"Objects: {self.object1.name} / {self.object2.name}")
+
+        print("\nGeometry")
+        print(
+            "Miss distance: "
+            f"{format_value(self.miss_distance, 'm')} computed | "
+            f"{format_value(self.miss_distance_reported, 'm')} reported"
+        )
+        print(
+            "Relative speed: "
+            f"{format_value(self.relative_speed, 'm/s')} computed | "
+            f"{format_value(self.relative_speed_reported, 'm/s')} reported"
+        )
+
+        print("\nCollision probability")
+        print(
+            "PoC: "
+            f"{format_value(self.poc, scientific=True)} computed | "
+            f"{format_value(self.poc_reported, scientific=True)} reported"
+        )
+        print(f"Reported method: {self.poc_method_reported or 'not available'}")
+
+        if self.hbr is not None:
+            print(f"HBR used: {self.hbr:.3f} m")
+
+        if not detailed:
+            print("="*60)
+            return
+
+        print("\nRelative state")
+        print(
+            "Relative position [m]: "
+            f"{np.array2string(self.relative_position, precision=3)}"
+        )
+        print(
+            "Relative velocity [m/s]: "
+            f"{np.array2string(self.relative_velocity, precision=3)}"
+        )
+        print(
+            "Encounter-plane miss vector [m]: "
+            f"{np.array2string(self.miss_vector, precision=3)}"
+        )
+
+        print("\nEncounter-plane covariance [m²]")
+        print(np.array2string(
+            self.covariance_enc.value,
+            precision=3,
+            suppress_small=False,
+        ))
+
+        print("\nObject 1")
+        self._print_object(self.object1)
+
+        print("\nObject 2")
+        self._print_object(self.object2)
+
+        print("="*60)
+
+    @staticmethod
+    def _print_object(conjunction_object: ConjunctionObject) -> None:
+
+        print(f"Name: {conjunction_object.name}")
+        print(f"Reference frame: {conjunction_object.reference_frame}")
+        print(
+            "Position [m]: "
+            f"{np.array2string(conjunction_object.position, precision=3)}"
+        )
+        print(
+            "Velocity [m/s]: "
+            f"{np.array2string(conjunction_object.velocity, precision=3)}"
+        )
+        print("RTN covariance [m²]:")
+        print(np.array2string(
+            conjunction_object.covariance.value,
+            precision=3,
+            suppress_small=False,
+        ))
+
+        if conjunction_object.area_pc is not None:
+            print(f"Collision area: {conjunction_object.area_pc:.3f} m²")
+
+    
         
 
 class ConjunctionDataMessage:
@@ -384,6 +496,8 @@ def esa_event_to_cdm(event: pd.Series) -> tuple[ConjunctionEvent, datetime]:
 
     target_covariance, chaser_covariance = esa_covariances(event)
 
+    hbr = (event["t_span"] + event["c_span"])/2
+
     target = ConjunctionObject(
         name='TARGET', 
         tca = tca,
@@ -415,9 +529,38 @@ def esa_event_to_cdm(event: pd.Series) -> tuple[ConjunctionEvent, datetime]:
                                          miss_distance_reported=miss_distance_reported, 
                                          relative_speed_reported=relative_speed_reported, 
                                          poc_reported=poc_reported, 
-                                         poc_method_reported=poc_method_reported)
+                                         poc_method_reported=poc_method_reported, 
+                                         hbr=hbr)
+
+    conjunction_event.get_poc()
 
     return conjunction_event, maneuver_epoch
+
+def clean_esa_events(candidates: pd.DataFrame, 
+                     relative_error_tolerance: float | int = 1e-2) -> pd.DataFrame:
+
+    rows_to_keep = []
+
+    for _, esa_event in candidates.iterrows():
+        event, time_to_tca = esa_event_to_cdm(esa_event)
+
+        computed_poc = float(event.poc)
+        reported_poc = float(event.poc_reported)
+
+        abs_err = np.abs(computed_poc - reported_poc)
+        rel_err = abs_err/computed_poc
+
+        if rel_err < relative_error_tolerance:
+            rows_to_keep.append(True)
+        else:
+            rows_to_keep.append(False)
+
+    return candidates[rows_to_keep]
+
+    
+
+
+
 
 if __name__ == "__main__":
 
