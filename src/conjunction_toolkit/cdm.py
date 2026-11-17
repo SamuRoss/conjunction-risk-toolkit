@@ -1,11 +1,13 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import numpy as np
 from conjunction_toolkit.geometry import encounter_frame, rtn_frame, relative_state
 from conjunction_toolkit.frames import itrf_to_gcrs_state
 from conjunction_toolkit.covariance import *
 from conjunction_toolkit.probability import poc_foster, poc_foster_small_hbr
+from conjunction_toolkit.resources_handler import *
 from pathlib import Path
+import pandas as pd
 
 '''
 CdmObject
@@ -75,7 +77,7 @@ class ConjunctionEvent:
 
         self.miss_distance = np.linalg.norm(self.miss_vector)
         self.relative_speed = np.linalg.norm(self.relative_velocity)
-        
+
         self._get_covariance()
 
     def get_poc(self, 
@@ -87,7 +89,7 @@ class ConjunctionEvent:
 
         if hbr is None: 
             
-            if self.object1.area_pc is None and self.object2.area_pc is None:
+            if self.object1.area_pc is None or self.object2.area_pc is None:
                   raise ValueError("HBR is required when AREA_PC is unavailable")
             
             hbr = estimate_hbr_from_area(area_primary=self.object1.area_pc, 
@@ -335,6 +337,58 @@ def estimate_hbr_from_area(
     radius_secondary = np.sqrt(area_secondary/np.pi)
 
     return float(radius_primary + radius_secondary)
+
+def esa_event_to_cdm(event: pd.Series) -> tuple[ConjunctionEvent, datetime]:
+
+    fictitious_date = datetime(2026, 11, 16, 22, 0, 0, tzinfo=timezone.utc)
+    tca = fictitious_date 
+    maneuver_epoch = tca - timedelta(days=float(event["time_to_tca"]))
+
+    target_position, target_velocity = esa_target_absolute_state(event)
+    chaser_position, chaser_velocity = esa_chaser_absolute_state(event, target_position, target_velocity)
+
+    target_covariance, chaser_covariance = esa_covariances(event)
+
+    target = ConjunctionObject(
+        name='TARGET', 
+        tca = tca,
+        reference_frame='J2000', 
+        position=target_position, 
+        velocity=target_velocity, 
+        covariance=target_covariance, 
+        area_pc=None
+    )
+
+    chaser = ConjunctionObject(
+        name='CHASER', 
+        tca=tca,
+        reference_frame='J2000', 
+        position=chaser_position, 
+        velocity=chaser_velocity, 
+        covariance=chaser_covariance, 
+        area_pc=None
+    )
+
+    miss_distance_reported = event["miss_distance"]
+    relative_speed_reported = event["relative_speed"]
+    poc_reported = np.pow(10, event["risk"])
+    poc_method_reported = None
+
+    conjunction_event = ConjunctionEvent(tca=tca, 
+                                         object1=target, 
+                                         object2=chaser, 
+                                         miss_distance_reported=miss_distance_reported, 
+                                         relative_speed_reported=relative_speed_reported, 
+                                         poc_reported=poc_reported, 
+                                         poc_method_reported=poc_method_reported)
+
+    return conjunction_event, maneuver_epoch
+
+
+
+
+
+
 
 if __name__ == "__main__":
 

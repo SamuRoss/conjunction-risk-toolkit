@@ -50,7 +50,7 @@ def encounter_frame(
     e_z = relative_velocity/np.linalg.norm(relative_velocity)
 
     # x-axis
-    r_perpendicular = relative_position - (np.dot(relative_position, e_z))*e_z
+    r_perpendicular = relative_position - np.dot(relative_position, e_z)*e_z
     e_x = r_perpendicular/np.linalg.norm(r_perpendicular)
 
     # y-axis 

@@ -11,7 +11,8 @@ dependencies = [
     "numpy",
     "matplotlib",
     "scipy",
-    "astropy"
+    "astropy",
+    "pandas"
 ]
 
 [tool.setuptools.packages.find]
