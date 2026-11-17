@@ -11,6 +11,15 @@ data_path = (
     / "train_data.csv"
 )
 
+def get_resources_path() -> Path: 
+    data_path = (
+    Path(__file__).resolve().parents[2]
+    / "resources"
+    / "ESA_dataset"
+    / "train_data.csv"
+    )
+    return data_path
+
 def get_esa_file(data_path) -> pd.DataFrame:
 
     columns = [
@@ -48,7 +57,7 @@ def get_esa_file(data_path) -> pd.DataFrame:
 
     return data
 
-def get_esa_candidates(data: pd.Series, 
+def get_esa_candidates(data: pd.DataFrame, 
                        number_of_candidates: int) -> pd.DataFrame:
 
     candidates = data[
@@ -60,7 +69,7 @@ def get_esa_candidates(data: pd.Series,
 
     print(f"Dataset rows: {len(data)}")
     print(f"Candidate rows: {len(candidates)}")
-    print(candidates.head(number_of_candidates).to_string(index=False))
+    print(candidates.loc[:, ["event_id", "risk", "miss_distance", "t_span", "c_span"]].head(number_of_candidates).to_string(index=False))
 
     return candidates
 

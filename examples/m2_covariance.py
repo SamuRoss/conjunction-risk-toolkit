@@ -1,6 +1,10 @@
 import numpy as np
 from conjunction_toolkit.geometry import relative_state, miss_distance, range_rate, encounter_frame, rtn_frame
-from conjunction_toolkit.covariance import combine_position_covariances, project_covariance_to_encounter_plane, covariance_ellipse_points, transform_covariance
+from conjunction_toolkit.covariance import combine_position_covariances, \
+    project_covariance_to_encounter_plane, \
+        covariance_ellipse_points, \
+            transform_covariance, \
+            Covariance
 import matplotlib.pyplot as plt
 
 ####################### INSERT DATA #######################
@@ -54,11 +58,11 @@ R_in2rtn_p = rtn_frame(r_p, v_p)
 R_in2rtn_s = rtn_frame(r_s, v_s)
 
 # Covariance Projection
-P_p_in = transform_covariance(P_p, R_in2rtn_p.T)
-P_s_in = transform_covariance(P_s, R_in2rtn_s.T)
+P_p_in = transform_covariance(Covariance(P_p), R_in2rtn_p.T)
+P_s_in = transform_covariance(Covariance(P_s), R_in2rtn_s.T)
 P_rel = combine_position_covariances(P_p_in, P_s_in)
 P_enc = project_covariance_to_encounter_plane(P_rel, R_in2enc)
-print(f"Covariance in Encounter plane: {P_enc} m^2")
+print(f"Covariance in Encounter plane: {P_enc.value} m^2")
 ellipse_1sigma = covariance_ellipse_points(P_enc, sigma_level=1, number_of_points=1000)
 ellipse_2sigma = covariance_ellipse_points(P_enc, sigma_level=2, number_of_points=1000)
 ellipse_3sigma = covariance_ellipse_points(P_enc, sigma_level=3, number_of_points=1000)

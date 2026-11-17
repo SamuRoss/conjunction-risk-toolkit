@@ -64,6 +64,7 @@ def covariance_ellipse_points(
     covariance: Covariance,
     sigma_level: float = 1.0,
     number_of_points: int = 200,
+    mean: np.ndarray = np.array([0, 0])
 ) -> np.ndarray:
     """Return centered points on a 2D covariance ellipse."""
 
@@ -86,7 +87,7 @@ def covariance_ellipse_points(
     ellipse_before_rotation = semi_axes*unit_circle
     ellipse = (Q @ ellipse_before_rotation.T).T
 
-    return ellipse
+    return mean + ellipse
 
 def transform_covariance(
     covariance_source: Covariance,

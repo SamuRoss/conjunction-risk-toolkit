@@ -8,6 +8,7 @@ from conjunction_toolkit.probability import poc_foster, poc_foster_small_hbr
 from conjunction_toolkit.resources_handler import *
 from pathlib import Path
 import pandas as pd
+import matplotlib.pyplot as plt
 
 '''
 CdmObject
@@ -123,7 +124,41 @@ class ConjunctionEvent:
 
         self.covariance_enc = projected_covariance
 
-    
+    def plot(self, 
+             hbr: float | None = None) -> None: 
+
+        # Primary and Secondary
+        fig, ax = plt.subplots(figsize=(8, 7))
+        ax.plot(0, 0, 'bx', markersize=8, label='Primary')
+        ax.plot(self.miss_vector[0], self.miss_vector[1], 'rx', markersize=8, label='Secondary')
+        ax.plot([0, self.miss_vector[0]], [0, self.miss_vector[1]], 'k', linestyle='--', label='Miss Vector')
+
+        # Ellipses
+        ellipse_1sigma = covariance_ellipse_points(self.covariance_enc, 1, 200, mean=self.miss_vector)
+        ellipse_2sigma = covariance_ellipse_points(self.covariance_enc, 2, 200, mean=self.miss_vector)
+        ellipse_3sigma = covariance_ellipse_points(self.covariance_enc, 3, 200, mean=self.miss_vector)
+        ax.plot(ellipse_1sigma[:, 0], ellipse_1sigma[:, 1], '-', color='red', label=r'1$\sigma$')
+        ax.plot(ellipse_2sigma[:, 0], ellipse_2sigma[:, 1], '-', color='orange', label=r"2$\sigma$")
+        ax.plot(ellipse_3sigma[:, 0], ellipse_3sigma[:, 1], '-', color='green', label=r'3$\sigma$')
+        farthest_point = np.max(np.linalg.norm(ellipse_3sigma, axis=1))
+
+        # Body - Radius
+        if hbr is not None: 
+            theta = np.linspace(0.0, 2.0 * np.pi, 200)
+            hbr_x = hbr * np.cos(theta)
+            hbr_y = hbr * np.sin(theta)
+            ax.fill(hbr_x, hbr_y, color="black", alpha=0.35, label="HBR", edgecolor='black')
+
+        ax.set_xlim([-farthest_point*1.1, farthest_point*1.1])
+        ax.set_ylim([-farthest_point*1.1, farthest_point*1.1])
+        ax.set_xlabel("Encounter x [m]")
+        ax.set_ylabel("Encounter y [m]")
+        ax.set_title("Encounter-plane uncertainty at TCA")
+        ax.legend()
+        ax.grid(True)
+        ax.set_aspect("equal", adjustable='box')
+
+        plt.show()
 
 
         
@@ -383,12 +418,6 @@ def esa_event_to_cdm(event: pd.Series) -> tuple[ConjunctionEvent, datetime]:
                                          poc_method_reported=poc_method_reported)
 
     return conjunction_event, maneuver_epoch
-
-
-
-
-
-
 
 if __name__ == "__main__":
 
